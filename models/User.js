@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 const UserSchema = new mongoose.Schema({
+  userId: { type: Number, unique: true },
   name: String,
-  email: { type: String, unique: true },
   password: String,
-  role: { type: String, enum: ['admin', 'user'], default: 'user' },
-  groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' }
+  isAdmin: { type: Boolean, default: false }, // false for user, true for admin
+  groupId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Group' }]
 });
 module.exports = mongoose.model('User', UserSchema);
