@@ -13,6 +13,17 @@ router.get('/', async (req, res) => {
 
 });
 
+router.get('/user/:id', async (req, res) => {
+  try {
+    const group = await Group.find({users: req.params.id});
+    if (!group)
+      return res.status(404).json({ message: 'No groups found for this user' });
+    res.status(200).json(group);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error while fetching groups by user' });
+  }
+})
+
 // GET one group by ID
 router.get('/:id/',async (req,res)=>{
   try{
@@ -38,12 +49,12 @@ router.post('/', async (req, res) => {
 
 //update group
 
-router.patch('/:id/add-users', async (req, res) => {
+router.put('/:id/add-users', async (req, res) => {
   try {
-    const { userIds } = req.body;
+    const { name,users } = req.body;
     const updatedGroup = await Group.findByIdAndUpdate(
       req.params.id,
-      { $addToSet: { users: { $each: userIds } } }, // avoids duplicates
+      {name, users  }, 
       { new: true }
     );
     if (!updatedGroup) {

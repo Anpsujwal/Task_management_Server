@@ -6,12 +6,23 @@ const router = express.Router();
 
 router.post('/signup', async (req, res) => {
   try {
-    const { name, password } = req.body;
+    const { userId,name, password } = req.body;
+    let isAdmin = req.body.isAdmin;
+    if (!userId || !name || !password) {
+      return res.status(400).json({ message: 'userId, name, and password are required' });
+    }
+
+    // Check if userId already exists
+    const existingUser = await User.findOne({ userId });
+    if (existingUser) {
+      return res.status(409).json({ message: 'User ID already exists' });
+    }
+
+    if(isAdmin === undefined) {
+      isAdmin = false; 
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const userId = await User.countDocuments() + 1;
-    console.log(`Creating user with ID: ${userId}`);
-    const user = new User({ userId, name, password: hashedPassword});
-    console.log(`User created: ${user}`);
+    const user = new User({ userId, name, password: hashedPassword,isAdmin});
     await user.save();
     res.status(200).json({ message: 'User registered' });
   } catch (error) {

@@ -2,6 +2,20 @@ const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
 
+const multer = require('multer');
+
+const storage = multer.memoryStorage(); // store in memory
+const upload = multer({ storage });
+
+router.get('/',async (req,res)=>{
+  try {
+    const tasks = await Task.find();
+    res.status(200).json(tasks);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch tasks', error });
+  }
+})
+
 // Create a new task
 router.post('/', async (req, res) => {
   try {
@@ -17,11 +31,22 @@ router.post('/', async (req, res) => {
 // Get tasks assigned to a user (by assignedWorker array)
 router.get('/user/:userId', async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedWorker: req.params.userId });
+    const tasks = await Task.find({ assignedWorkers: req.params.userId });
     res.status(200).json(tasks);
   } catch (error) {
     console.error('Error fetching tasks for user:', error);
     res.status(500).json({ message: 'Failed to fetch user tasks', error });
+  }
+});
+
+// Get tasks assigned to a group (by assignedGroup)
+router.get('/group/:groupId', async (req, res) => {
+  try {
+    const tasks = await Task.find({ assignedGroup: req.params.groupId });
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks for user:', error);
+    res.status(500).json({ message: 'Failed to fetch group tasks', error });
   }
 });
 
@@ -42,6 +67,50 @@ router.put('/:id', async (req, res) => {
     res.status(500).json({ message: 'Failed to update task', error });
   }
 });
+
+// PUT /api/tasks/:id/status
+router.put('/:id/status', upload.single('image'), async (req, res) => {
+  try {
+    const { statusText, description, byUser } = req.body;
+    const task = await Task.findById(req.params.id);
+
+    task.status.text = statusText;
+    console.log('image', req.file);
+    if (req.file) {
+      task.status.image = req.file.buffer; // store image as buffer
+    }
+
+    task.status.updates = {
+      description,
+      date: new Date(),
+      byUser
+    };
+
+    await task.save();
+    res.send(task);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ error: 'Failed to update task status' });
+  }
+});
+
+// GET /api/tasks/:id/image
+router.get('/:id/image', async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task || !task.status?.image) {
+      return res.status(404).send('Image not found');
+    }
+
+    res.set('Content-Type', 'image/jpeg'); // or image/png if needed
+    res.send(task.status.image);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Failed to retrieve image');
+  }
+});
+
+
 
 // Delete a task
 router.delete('/:id', async (req, res) => {
