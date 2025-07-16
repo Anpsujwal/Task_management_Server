@@ -10,11 +10,11 @@ const groupRoutes = require('./routes/groups');
 const app = express();
 dotenv.config();
 
-app.use(cors());
-app.use(express.json({
+app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 }));
+app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
