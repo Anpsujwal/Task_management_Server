@@ -22,5 +22,5 @@ app.use('/api/users', userRoutes);
 app.use('/api/groups', groupRoutes);
 
 mongoose.connect("mongodb+srv://anpsujwal:dbpassword@cluster0.k5xrdmr.mongodb.net/employee_management?retryWrites=true&w=majority&appName=Cluster0")
-.then(() => app.listen(5000, () => console.log('Server started on port 5000')))
+.then(() =>console.log("connection successful"))
 .catch((err) => console.log(err));
