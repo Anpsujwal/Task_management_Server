@@ -10,16 +10,22 @@ const groupRoutes = require('./routes/groups');
 const app = express();
 dotenv.config();
 
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-}));
+app.use(cors());
 app.use(express.json());
+
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE'); // Allow these HTTP methods
+    next();
+  });
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/groups', groupRoutes);
+
+app.listen(5000)
 
 mongoose.connect("mongodb+srv://anpsujwal:dbpassword@cluster0.k5xrdmr.mongodb.net/employee_management?retryWrites=true&w=majority&appName=Cluster0")
 .then(() =>console.log("connection successful"))
