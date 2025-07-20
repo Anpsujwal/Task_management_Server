@@ -11,14 +11,22 @@ const app = express();
 dotenv.config();
 
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json());
+
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE'); // Allow these HTTP methods
+    next();
+  });
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/groups', groupRoutes);
 
+app.listen(5000)
+
 mongoose.connect("mongodb+srv://anpsujwal:dbpassword@cluster0.k5xrdmr.mongodb.net/employee_management?retryWrites=true&w=majority&appName=Cluster0")
-.then(() => app.listen(5000, () => console.log('Server started on port 5000')))
+.then(() =>console.log("connection successful"))
 .catch((err) => console.log(err));
