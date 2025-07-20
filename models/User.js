@@ -4,5 +4,6 @@ const UserSchema = new mongoose.Schema({
   name: String,
   password: String,
   isAdmin: { type: Boolean, default: false }, // false for user, true for admin
+  group: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
 });
 module.exports = mongoose.model('User', UserSchema);

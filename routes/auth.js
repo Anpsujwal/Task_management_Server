@@ -8,6 +8,7 @@ router.post('/signup', async (req, res) => {
   try {
     const { userId,name, password } = req.body;
     let isAdmin = req.body.isAdmin;
+    let group = req.body.group;
     if (!userId || !name || !password) {
       return res.status(400).json({ message: 'userId, name, and password are required' });
     }
@@ -21,8 +22,11 @@ router.post('/signup', async (req, res) => {
     if(isAdmin === undefined) {
       isAdmin = false; 
     }
+    if(!group) {
+      group = null; // Default to null if no group is 
+    }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ userId, name, password: hashedPassword,isAdmin});
+    const user = new User({ userId, name, password: hashedPassword,isAdmin, group });
     await user.save();
     res.status(200).json({ message: 'User registered' });
   } catch (error) {

@@ -69,19 +69,34 @@ router.put('/:id', async (req, res) => {
 });
 
 // PUT /api/tasks/:id/status
-router.put('/:id/status', upload.single('image'), async (req, res) => {
+router.put('/:id/status', upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'video', maxCount: 1 },
+  { name: 'audio', maxCount: 1 }
+]), async (req, res) => {
   try {
     const { statusText, description, byUser } = req.body;
     const task = await Task.findById(req.params.id);
 
+    if (!task) return res.status(404).send({ error: 'Task not found' });
+
+
     task.status.text = statusText;
-    console.log('image', req.file);
-    if (req.file) {
-      task.status.image = req.file.buffer; // store image as buffer
+
+    if (req.files?.image?.[0]) {
+      task.status.image = req.files.image[0].buffer;
+    }
+
+    if (req.files?.video?.[0]) {
+      task.status.video = req.files.video[0].buffer;
+    }
+
+    if (req.files?.audio?.[0]) {
+      task.status.audio = req.files.audio[0].buffer;
     }
 
     task.status.updates = {
-      description,
+      comments: [description],
       date: new Date(),
       byUser
     };
@@ -107,6 +122,36 @@ router.get('/:id/image', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('Failed to retrieve image');
+  }
+});
+
+router.get('/:id/video', async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task || !task.status?.video) {
+      return res.status(404).send('video not found');
+    }
+
+    res.set('Content-Type', 'video/mp4'); 
+    res.send(task.status.video);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Failed to retrieve video');
+  }
+});
+
+router.get('/:id/audio', async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task || !task.status?.audio) {
+      return res.status(404).send('audio not found');
+    }
+
+    res.set('Content-Type', 'audio/mpeg'); // or audio/wav if needed
+    res.send(task.status.audio);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Failed to retrieve audio');
   }
 });
 
