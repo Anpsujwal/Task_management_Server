@@ -5,7 +5,7 @@ const TaskSchema = new mongoose.Schema({
   priority: { type: String, enum: ['low', 'high'], default: 'low' },
   assignedWorkers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   assignedGroup: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
-  createdDate: { type: Date, default: Date.now },
+  createdDate: { type: Date},
   scheduleFor: {type:String,enum: ['specific_day', 'week_days', 'week_ends','alternate_days','month','quarter','half_yearly','yearly'], default: 'specific_day'},
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   status:{
