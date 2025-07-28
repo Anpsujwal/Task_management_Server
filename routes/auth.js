@@ -7,28 +7,46 @@ const router = express.Router();
 router.post('/signup', async (req, res) => {
   try {
     const { userId,name, password } = req.body;
-    let isAdmin = req.body.isAdmin;
-    let group = req.body.group;
+
     if (!userId || !name || !password) {
       return res.status(400).json({ message: 'userId, name, and password are required' });
     }
-
     // Check if userId already exists
     const existingUser = await User.findOne({ userId });
     if (existingUser) {
       return res.status(409).json({ message: 'User ID already exists' });
     }
+    
+    const payload={
+      userId,
+      name,
+      password: await bcrypt.hash(password, 10),
+    }
+
+    let isAdmin = req.body.isAdmin;
+    let group = req.body.group;
+    let adminType = req.body.adminType;
+    
 
     if(isAdmin === undefined) {
-      isAdmin = false; 
+      payload.isAdmin = false; 
+    }else{
+      payload.isAdmin = isAdmin; 
     }
+
+    if(adminType !== undefined) {
+      payload.adminType = adminType; 
+    }
+
     if(!group) {
-      group = null; // Default to null if no group is 
+      payload.group=null; 
+    }else{
+      payload.group = group;
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ userId, name, password: hashedPassword,isAdmin, group });
+    
+    const user = new User(payload);
     await user.save();
-    res.status(200).json({ message: 'User registered' });
+    res.status(200).json({ message: 'User registered',id: user._id });
   } catch (error) {
     res.status(500).json({ message: 'Server error during signup' ,error});
   }

@@ -7,9 +7,9 @@ const multer = require('multer');
 const storage = multer.memoryStorage(); // store in memory
 const upload = multer({ storage });
 
-router.get('/',async (req,res)=>{
+router.get('/', async (req, res) => {
   try {
-    const tasks = await Task.find().select('-status');
+    const tasks = await Task.find().select('-status.image -status.video -status.audio -status.updates');
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch tasks', error });
@@ -28,10 +28,51 @@ router.post('/', async (req, res) => {
   }
 });
 
+router.get('/:id', async (req, res) => {
+  try {
+    const task = await Task.findById(req.params.id).select('-status.image -status.video -status.audio -status.updates');
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+    res.status(200).json(task)
+
+  } catch (error) {
+    console.error('Error fetching task:', error);
+    res.status(500).json({ message: 'Failed to fetch task', error });
+  }
+})
+
+
+router.get('/createdby/:id', async (req, res) => {
+  try {
+    const tasks = await Task.find({ createdBy: req.params.id }).select('-status.image.media -status.video.media -status.audio.media -status.updates');
+    if (!tasks) return res.status(404).json({ message: 'Tasks not found' });
+    res.status(200).json(tasks)
+
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ message: 'Failed to fetch tasks', error });
+  }
+})
+
+
 // Get tasks assigned to a user (by assignedWorker array)
 router.get('/user/:userId', async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedWorkers: req.params.userId });
+    const tasks = await Task.find({ assignedWorkers: req.params.userId }, ).select('-status.image -status.video -status.audio -status.updates');
+    res.status(200).json(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks for user:', error);
+    res.status(500).json({ message: 'Failed to fetch user tasks', error });
+  }
+});
+
+router.get('/alltasks/user/:userId', async (req, res) => {
+  try {
+    const tasks = await Task.find({
+      $or: [
+        { assignedWorkers: req.params.userId },
+        { 'groupTaskDetails.frozenBy': req.params.userId }]
+    }
+    ).select('-status.image -status.video -status.audio -status.updates');
     res.status(200).json(tasks);
   } catch (error) {
     console.error('Error fetching tasks for user:', error);
@@ -42,13 +83,63 @@ router.get('/user/:userId', async (req, res) => {
 // Get tasks assigned to a group (by assignedGroup)
 router.get('/group/:groupId', async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedGroup: req.params.groupId });
+    const tasks = await Task.find({ 'groupTaskDetails.group': req.params.groupId }).select('-status.image -status.video -status.audio -status.updates');
     res.status(200).json(tasks);
   } catch (error) {
     console.error('Error fetching tasks for user:', error);
     res.status(500).json({ message: 'Failed to fetch group tasks', error });
   }
 });
+
+router.patch('/freeze/:id', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const task = await Task.findById(req.params.id).select('groupTaskDetails');
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    if (task.groupTaskDetails.workersNeeded > task.groupTaskDetails.frozenBy.length) {
+      if (!task.groupTaskDetails.frozenBy.includes(userId)) {
+        task.groupTaskDetails.frozenBy.push(userId);
+        await task.save();
+        res.status(200).json({ message: 'Task frozen successfully' });
+      } else {
+        res.status(400).json({ message: 'Task already frozen by this user' });
+      }
+    } else {
+      res.status(400).json({ message: 'All required workers already frozen' });
+    }
+  } catch (error) {
+    console.error('Error freezing task:', error);
+    res.status(500).json({ message: 'Failed to freeze task', error });
+  }
+
+})
+
+router.patch('/unfreeze/:id', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const task = await Task.findById(req.params.id).select('groupTaskDetails');
+    if (!task) return res.status(404).json({ message: 'Task not found' });
+
+    if (task.groupTaskDetails.frozenBy.length > 0) {
+      if (task.groupTaskDetails.frozenBy.includes(userId)) {
+        task.groupTaskDetails.frozenBy = task.groupTaskDetails.frozenBy.filter(
+          id => id.toString() !== userId.toString()
+        );
+        await task.save();
+        res.status(200).json({ message: 'Task frozen successfully' });
+      } else {
+        res.status(400).json({ message: 'Task already frozen by this user' });
+      }
+    } else {
+      res.status(400).json({ message: 'All required workers already frozen' });
+    }
+  } catch (error) {
+    console.error('Error freezing task:', error);
+    res.status(500).json({ message: 'Failed to freeze task', error });
+  }
+
+})
 
 // Update a task
 router.put('/:id', async (req, res) => {
@@ -95,14 +186,17 @@ router.put('/:id/status', upload.fields([
       task.status.audio = req.files.audio[0].buffer;
     }
 
-    task.status.updates = {
-      comments: [description],
+    if (!Array.isArray(task.status.updates)) {
+      task.status.updates = [];
+    }
+    task.status.updates.push({
+      comment: description || '',
       date: new Date(),
       byUser
-    };
+    });
 
     await task.save();
-    res.send(task);
+    res.status(200).send({ message: 'Task status updated successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).send({ error: 'Failed to update task status' });
@@ -118,7 +212,12 @@ router.get('/:id/image', async (req, res) => {
     }
 
     res.set('Content-Type', 'image/jpeg'); // or image/png if needed
-    res.send(task.status.image);
+    res.writeHead(200, {
+      'Content-Type': 'image/jpeg',
+      'Content-Length': task.status.image.media.length
+    });
+    res.end(task.status.image);
+
   } catch (err) {
     console.error(err);
     res.status(500).send('Failed to retrieve image');
@@ -132,8 +231,13 @@ router.get('/:id/video', async (req, res) => {
       return res.status(404).send('video not found');
     }
 
-    res.set('Content-Type', 'video/mp4'); 
-    res.send(task.status.video);
+    res.set('Content-Type', 'video/mp4');
+    res.writeHead(200, {
+      'Content-Type': 'video/mp4',
+      'Content-Length': task.status.video.media.length
+    });
+    res.end(task.status.video);
+
   } catch (err) {
     console.error(err);
     res.status(500).send('Failed to retrieve video');
@@ -148,7 +252,12 @@ router.get('/:id/audio', async (req, res) => {
     }
 
     res.set('Content-Type', 'audio/mpeg'); // or audio/wav if needed
-    res.send(task.status.audio);
+    res.writeHead(200, {
+      'Content-Type': 'audio/mpeg',
+      'Content-Length': task.status.audio.media.length
+    });
+    res.end(task.status.audio);
+
   } catch (err) {
     console.error(err);
     res.status(500).send('Failed to retrieve audio');

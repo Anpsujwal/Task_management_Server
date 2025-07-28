@@ -27,7 +27,7 @@ router.get('/user/:id', async (req, res) => {
 // GET one group by ID
 router.get('/:id/',async (req,res)=>{
   try{
-    const group =await Group.findById(req.params.idd);
+    const group =await Group.findById(req.params.id);
     if (!group)
       return res.status(404).json({ message: 'No users found for this group' });
     res.status(200).json( group );
@@ -65,6 +65,20 @@ router.put('/:id/add-users', async (req, res) => {
     res.status(500).json({ message: 'Server error while updating group' });
   }
 });
+
+router.patch('/:id/addUser',async (req,res)=>{
+  try{
+    const group=await Group.findById(req.params.id);
+    if(!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+    group.users.push(req.body.userId);
+    await group.save();
+    res.status(200).json({ message: 'User added to group'});
+  }catch(error) {
+    res.status(500).json({ message: 'Server error while adding user to group' });
+  }
+})
 
 
 
