@@ -6,7 +6,8 @@ const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/task');
 const userRoutes = require('./routes/user');
 const groupRoutes = require('./routes/groups');
-
+const user1Routes=require('./routes/user1');
+const ticketRoutes=require('./routes/ticket')
 const app = express();
 dotenv.config();
 
@@ -24,6 +25,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/user1',user1Routes);
+app.use('/api/tickets',ticketRoutes)
+
 
 app.listen(5000)
 

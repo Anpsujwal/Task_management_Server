@@ -24,6 +24,15 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.get('/group/:groupId', async (req, res) => {
+  try {
+    const users = await User.find({group:req.params.groupId});
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error while fetching user'});
+  }
+});
+
 
 // Update user details
 router.put('/:id', async (req, res) => {

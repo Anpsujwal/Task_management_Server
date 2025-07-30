@@ -4,7 +4,7 @@ const Task = require('../models/Task');
 
 const multer = require('multer');
 
-const storage = multer.memoryStorage(); // store in memory
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 router.get('/', async (req, res) => {
@@ -127,16 +127,13 @@ router.patch('/unfreeze/:id', async (req, res) => {
           id => id.toString() !== userId.toString()
         );
         await task.save();
-        res.status(200).json({ message: 'Task frozen successfully' });
-      } else {
-        res.status(400).json({ message: 'Task already frozen by this user' });
-      }
-    } else {
-      res.status(400).json({ message: 'All required workers already frozen' });
+        return res.status(200).json({ message: 'Task unfrozen successfully' });
+      } 
+      res.status(400).json({ message: 'You are not authorized' });
     }
   } catch (error) {
-    console.error('Error freezing task:', error);
-    res.status(500).json({ message: 'Failed to freeze task', error });
+    console.error('Error unfreezing ticket:', error);
+    res.status(500).json({ message: 'Failed to unfreeze ticket', error });
   }
 
 })
@@ -171,18 +168,20 @@ router.put('/:id/status', upload.fields([
 
     if (!task) return res.status(404).send({ error: 'Task not found' });
 
-
     task.status.text = statusText;
 
     if (req.files?.image?.[0]) {
-      task.status.image = req.files.image[0].buffer;
+      task.status.image.hasImage=true;
+      task.status.image.media = req.files.image[0].buffer;
     }
 
     if (req.files?.video?.[0]) {
+      task.status.image.hasVideo=true;
       task.status.video = req.files.video[0].buffer;
     }
 
     if (req.files?.audio?.[0]) {
+      task.status.image.hasAudio=true;
       task.status.audio = req.files.audio[0].buffer;
     }
 
@@ -216,7 +215,7 @@ router.get('/:id/image', async (req, res) => {
       'Content-Type': 'image/jpeg',
       'Content-Length': task.status.image.media.length
     });
-    res.end(task.status.image);
+    res.end(task.status.image.media);
 
   } catch (err) {
     console.error(err);
@@ -236,7 +235,7 @@ router.get('/:id/video', async (req, res) => {
       'Content-Type': 'video/mp4',
       'Content-Length': task.status.video.media.length
     });
-    res.end(task.status.video);
+    res.end(task.status.video.media);
 
   } catch (err) {
     console.error(err);
@@ -256,7 +255,7 @@ router.get('/:id/audio', async (req, res) => {
       'Content-Type': 'audio/mpeg',
       'Content-Length': task.status.audio.media.length
     });
-    res.end(task.status.audio);
+    res.end(task.status.audio.media);
 
   } catch (err) {
     console.error(err);
