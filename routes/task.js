@@ -168,23 +168,33 @@ router.put('/:id/status', upload.fields([
 
     if (!task) return res.status(404).send({ error: 'Task not found' });
 
+    // Update status text
     task.status.text = statusText;
 
+    // Initialize media objects if missing
+    if (!task.status.image) task.status.image = { hasImage: false, media: null };
+    if (!task.status.video) task.status.video = { hasVideo: false, media: null };
+    if (!task.status.audio) task.status.audio = { hasAudio: false, media: null };
+
+    // Update image
     if (req.files?.image?.[0]) {
-      task.status.image.hasImage=true;
+      task.status.image.hasImage = true;
       task.status.image.media = req.files.image[0].buffer;
     }
 
+    // Update video
     if (req.files?.video?.[0]) {
-      task.status.image.hasVideo=true;
-      task.status.video .media= req.files.video[0].buffer;
+      task.status.video.hasVideo = true;
+      task.status.video.media = req.files.video[0].buffer;
     }
 
+    // Update audio
     if (req.files?.audio?.[0]) {
-      task.status.image.hasAudio=true;
+      task.status.audio.hasAudio = true;
       task.status.audio.media = req.files.audio[0].buffer;
     }
 
+    // Push update log
     if (!Array.isArray(task.status.updates)) {
       task.status.updates = [];
     }
@@ -201,6 +211,7 @@ router.put('/:id/status', upload.fields([
     res.status(500).send({ error: 'Failed to update task status' });
   }
 });
+
 
 // GET /api/tasks/:id/image
 router.get('/:id/image', async (req, res) => {

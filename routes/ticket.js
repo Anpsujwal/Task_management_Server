@@ -165,23 +165,33 @@ router.put('/:id/status', upload.fields([
 
     if (!ticket) return res.status(404).send({ error: 'Task not found' });
 
+    // Update status text
     ticket.status.text = statusText;
 
+    // Initialize media objects if missing
+    if (!ticket.status.image) ticket.status.image = { hasImage: false, media: null };
+    if (!ticket.status.video) ticket.status.video = { hasVideo: false, media: null };
+    if (!ticket.status.audio) ticket.status.audio = { hasAudio: false, media: null };
+
+    // Update image
     if (req.files?.image?.[0]) {
-      ticket.status.image.hasImage=true;
+      ticket.status.image.hasImage = true;
       ticket.status.image.media = req.files.image[0].buffer;
     }
 
+    // Update video
     if (req.files?.video?.[0]) {
-      ticket.status.image.hasVideo=true;
+      ticket.status.video.hasVideo = true;
       ticket.status.video.media = req.files.video[0].buffer;
     }
 
+    // Update audio
     if (req.files?.audio?.[0]) {
-      ticket.status.image.hasAudio=true;
+      ticket.status.audio.hasAudio = true;
       ticket.status.audio.media = req.files.audio[0].buffer;
     }
 
+    // Push update log
     if (!Array.isArray(ticket.status.updates)) {
       ticket.status.updates = [];
     }
@@ -198,6 +208,7 @@ router.put('/:id/status', upload.fields([
     res.status(500).send({ error: 'Failed to update task status' });
   }
 });
+
 
 // GET /api/tasks/:id/image
 router.get('/:id/image', async (req, res) => {
