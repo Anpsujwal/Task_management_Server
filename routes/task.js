@@ -9,7 +9,7 @@ const upload = multer({ storage });
 
 router.get('/', async (req, res) => {
   try {
-    const tasks = await Task.find().select('-status.image -status.video -status.audio -status.updates');
+    const tasks = await Task.find().select('-status.image.media -status.video.media -status.audio.media -status.updates');
     res.status(200).json(tasks);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch tasks', error });
@@ -30,7 +30,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const task = await Task.findById(req.params.id).select('-status.image -status.video -status.audio -status.updates');
+    const task = await Task.findById(req.params.id).select('-status.image.media -status.video.media -status.audio.media -status.updates');
     if (!task) return res.status(404).json({ message: 'Task not found' });
     res.status(200).json(task)
 
@@ -57,7 +57,7 @@ router.get('/createdby/:id', async (req, res) => {
 // Get tasks assigned to a user (by assignedWorker array)
 router.get('/user/:userId', async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedWorkers: req.params.userId }, ).select('-status.image -status.video -status.audio -status.updates');
+    const tasks = await Task.find({ assignedWorkers: req.params.userId }, ).select('-status.image.media -status.video.media -status.audio.media -status.updates');
     res.status(200).json(tasks);
   } catch (error) {
     console.error('Error fetching tasks for user:', error);
@@ -72,7 +72,7 @@ router.get('/alltasks/user/:userId', async (req, res) => {
         { assignedWorkers: req.params.userId },
         { 'groupTaskDetails.frozenBy': req.params.userId }]
     }
-    ).select('-status.image -status.video -status.audio -status.updates');
+    ).select('-status.image.media -status.video.media -status.audio.media -status.updates');
     res.status(200).json(tasks);
   } catch (error) {
     console.error('Error fetching tasks for user:', error);
@@ -83,7 +83,7 @@ router.get('/alltasks/user/:userId', async (req, res) => {
 // Get tasks assigned to a group (by assignedGroup)
 router.get('/group/:groupId', async (req, res) => {
   try {
-    const tasks = await Task.find({ 'groupTaskDetails.group': req.params.groupId }).select('-status.image -status.video -status.audio -status.updates');
+    const tasks = await Task.find({ 'groupTaskDetails.group': req.params.groupId }).select('-status.image.media -status.video.media -status.audio.media -status.updates');
     res.status(200).json(tasks);
   } catch (error) {
     console.error('Error fetching tasks for user:', error);
