@@ -177,12 +177,12 @@ router.put('/:id/status', upload.fields([
 
     if (req.files?.video?.[0]) {
       task.status.image.hasVideo=true;
-      task.status.video = req.files.video[0].buffer;
+      task.status.video .media= req.files.video[0].buffer;
     }
 
     if (req.files?.audio?.[0]) {
       task.status.image.hasAudio=true;
-      task.status.audio = req.files.audio[0].buffer;
+      task.status.audio.media = req.files.audio[0].buffer;
     }
 
     if (!Array.isArray(task.status.updates)) {
