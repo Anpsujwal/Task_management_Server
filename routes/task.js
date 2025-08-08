@@ -83,7 +83,7 @@ router.get('/alltasks/user/:userId', async (req, res) => {
 // Get tasks assigned to a group (by assignedGroup)
 router.get('/group/:groupId', async (req, res) => {
   try {
-    const tasks = await Task.find({ 'groupTaskDetails.group': req.params.groupId }).select('-status.image.media -status.video.media -status.audio.media -status.updates');
+    const tasks = await Task.find({ group: req.params.groupId }).select('-status.image.media -status.video.media -status.audio.media -status.updates');
     res.status(200).json(tasks);
   } catch (error) {
     console.error('Error fetching tasks for user:', error);
@@ -290,23 +290,6 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// Task report for a user (based on assignedWorker)
-router.get('/report/:userId', async (req, res) => {
-  try {
-    const userId = parseInt(req.params.userId);
-    const allTasks = await Task.find({ assignedWorker: userId });
 
-    const completed = allTasks.filter(t => t.status?.text === 'completed');
-    const pending = allTasks.filter(t => t.status?.text === 'pending');
-    const overdue = allTasks.filter(t =>
-      new Date(t.dueDate) < new Date() && t.status?.text !== 'completed'
-    );
-
-    res.status(200).json({ completed, pending, overdue });
-  } catch (error) {
-    console.error('Error generating report:', error);
-    res.status(500).json({ message: 'Failed to generate task report', error });
-  }
-});
 
 module.exports = router;

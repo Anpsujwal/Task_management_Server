@@ -4,8 +4,8 @@ const TaskSchema = new mongoose.Schema({
   comment: String,
   priority: { type: String, enum: ['low', 'high'], default: 'low' },
   assignToEntireGroup:{ type: Boolean, default: false },
+  group:{ type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
   groupTaskDetails: {
-    group:{ type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
     workersNeeded: { type: Number },
     frozenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
